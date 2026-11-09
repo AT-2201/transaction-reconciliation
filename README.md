@@ -1,10 +1,16 @@
 # Reconcile
 
-A complete local V1 of the transaction reconciliation and exception review project. It imports the synthetic NovaCommerce records, executes deterministic checks, and provides a persistent React workbench backed by FastAPI.
+Reconcile checks orders, payments, processor payouts, bank deposits, and ledger entries. It gives finance teams a queue for investigating differences and recording review decisions.
 
-[Open the public demo](https://at-2201.github.io/transaction-reconciliation/) to browse the synthetic reconciliation results, exceptions, and source evidence. The hosted demo is read-only. Run the local app to import files, execute new runs, or review cases.
+**[Open the public demo](https://at-2201.github.io/transaction-reconciliation/)** · Read-only · Synthetic data · No sign-in
 
-## Start the project
+| Public demo | Full local app |
+| --- | --- |
+| Browse a completed reconciliation run, filter match results, search exception cases, inspect source evidence, and export cases to CSV. | Import CSVs, run reconciliation, assign cases, add notes and evidence, and approve or close cases as the appropriate role. |
+
+The hosted demo shows saved results from the bundled NovaCommerce dataset. Use the local app to try the reviewer and approver workflow.
+
+## Run the full app locally
 
 Requires Python 3.12+ and Node.js 20.19+ or 22.12+.
 
@@ -31,11 +37,11 @@ Alternative: `docker compose up --build` starts the same application with a pers
 - Late evidence import can clear a source finding while leaving case closure to a reviewer.
 - Source explorer, run history, held-out scenario evaluation, API documentation, automated tests, and a container setup.
 
-## Demo workflow
+## Local walkthrough
 
 1. Enter as demo approver. The baseline has **10,360 checks**, **10,040 reconciled**, **68 review cases**, **50 partial orders**, **200 ineligible orders**, and **2 pending payouts**.
-2. Open **Exception queue**, filter by a stage, and select a source record.
-3. Inspect **Source evidence**. In **Review actions**, assign the case to the demo reviewer. Add a note in **Activity & notes**.
+2. On **Overview**, filter the **Case queue** by stage and select a case.
+3. Inspect **Evidence**. In **Review**, assign the case to the demo reviewer. Add a note in **Activity**.
 4. Attach the matching source CSV (or retained imported file) and record identifier, explain what it demonstrates, and update the status. An active difference requires evidence before resolution.
 5. For missing-reference or ambiguous bank candidates, select the verified bank transaction and approve as an approver who is not the assigned owner. Approval records a decision; it does not change source data or move funds.
 6. On **Overview**, open **Imports**, select processor transactions, and import `datasets/fixtures/replay/processor_transactions_replay.csv`: expect 100 duplicates and zero new events. Import the invalid fixture separately: expect four quarantined rows.
