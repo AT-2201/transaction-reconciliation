@@ -1,0 +1,121 @@
+table,column,data_type,requirement,description
+customers,customer_id,TEXT,PK,Synthetic customer identifier
+customers,created_at,TIMESTAMPTZ,NOT NULL,Customer creation time
+bank_accounts,account_id,TEXT,PK,Synthetic account token; not a real account number
+bank_accounts,merchant_id,TEXT,NOT NULL,Fictional merchant identifier
+bank_accounts,currency,TEXT,NOT NULL,ISO currency code
+chart_of_accounts,account_code,TEXT,PK,Ledger account code
+chart_of_accounts,account_name,TEXT,NOT NULL,Account label
+users,user_id,TEXT,PK,Synthetic user identifier
+users,display_name,TEXT,NOT NULL,Fictional role label
+users,role,TEXT,NOT NULL,reviewer or approver
+orders,order_id,TEXT,PK,Source order identifier
+orders,customer_id,TEXT,NOT NULL,Reference to customers
+orders,order_amount_cents,BIGINT,NOT NULL,Original positive order value in cents
+orders,currency,TEXT,NOT NULL,USD
+orders,status,TEXT,NOT NULL,"paid, partially_paid, unpaid, authorized, or cancelled"
+orders,ordered_at,TIMESTAMPTZ,NOT NULL,Order creation time
+orders,source_system,TEXT,NOT NULL,Stable external identifier namespace
+orders,batch_id,TEXT,NOT NULL,Import batch identifier
+orders,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+processor_transactions,txn_id,TEXT,PK,Stable processor event identifier
+processor_transactions,order_id,TEXT,nullable,Related order; blank for processor-level reserve activity
+processor_transactions,related_txn_id,TEXT,nullable,"Original capture related to fee/refund/chargeback, or reserve hold"
+processor_transactions,type,TEXT,NOT NULL,"capture, fee, refund, chargeback, reserve_hold, reserve_release, authorization"
+processor_transactions,amount_cents,BIGINT,NOT NULL,Signed settlement effect; authorization is zero
+processor_transactions,authorized_amount_cents,BIGINT,nullable,Positive authorized amount only for authorization events
+processor_transactions,currency,TEXT,NOT NULL,USD
+processor_transactions,status,TEXT,NOT NULL,succeeded for settled events; authorized for noncaptured authorization
+processor_transactions,processed_at,TIMESTAMPTZ,NOT NULL,Processor event time
+processor_transactions,source_system,TEXT,NOT NULL,Stable external identifier namespace
+processor_transactions,batch_id,TEXT,NOT NULL,Import batch identifier
+processor_transactions,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+processor_payouts,payout_id,TEXT,PK,Stable processor payout identifier
+processor_payouts,bank_account_id,TEXT,NOT NULL,Destination bank account token
+processor_payouts,net_amount_cents,BIGINT,NOT NULL,Reported net payout in cents
+processor_payouts,currency,TEXT,NOT NULL,USD
+processor_payouts,status,TEXT,NOT NULL,paid or in_transit
+processor_payouts,settlement_date,DATE,NOT NULL,Date settlement was assembled
+processor_payouts,expected_arrival,DATE,NOT NULL,Expected bank value date
+processor_payouts,bank_reference,TEXT,NOT NULL,Processor-provided payout reference
+processor_payouts,source_system,TEXT,NOT NULL,Stable external identifier namespace
+processor_payouts,batch_id,TEXT,NOT NULL,Import batch identifier
+processor_payouts,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+payout_items,payout_item_id,TEXT,PK,Membership row identifier
+payout_items,payout_id,TEXT,NOT NULL,Reference to processor_payouts
+payout_items,txn_id,TEXT,NOT NULL,Reference to processor_transactions
+payout_items,signed_contribution_cents,BIGINT,NOT NULL,Signed event contribution; do not deduct fees again
+payout_items,source_system,TEXT,NOT NULL,Stable external identifier namespace
+payout_items,batch_id,TEXT,NOT NULL,Import batch identifier
+payout_items,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+bank_transactions,bank_txn_id,TEXT,PK,Stable bank transaction identifier
+bank_transactions,account_id,TEXT,NOT NULL,Reference to bank_accounts
+bank_transactions,value_date,DATE,NOT NULL,Bank value date
+bank_transactions,amount_cents,BIGINT,NOT NULL,Credit positive; debit negative
+bank_transactions,currency,TEXT,NOT NULL,USD
+bank_transactions,status,TEXT,NOT NULL,posted
+bank_transactions,reference,TEXT,nullable,Bank-supplied reference; can be blank
+bank_transactions,memo,TEXT,NOT NULL,Bank description
+bank_transactions,source_system,TEXT,NOT NULL,Stable external identifier namespace
+bank_transactions,batch_id,TEXT,NOT NULL,Import batch identifier
+bank_transactions,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+ledger_journals,journal_id,TEXT,PK,Journal identifier
+ledger_journals,posting_date,DATE,NOT NULL,Accounting posting date
+ledger_journals,status,TEXT,NOT NULL,posted
+ledger_journals,reference,TEXT,NOT NULL,Source event or bank transaction identifier
+ledger_journals,currency,TEXT,NOT NULL,USD
+ledger_journals,source_system,TEXT,NOT NULL,Stable external identifier namespace
+ledger_journals,batch_id,TEXT,NOT NULL,Import batch identifier
+ledger_journals,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+ledger_entries,line_id,TEXT,PK,Journal line identifier
+ledger_entries,journal_id,TEXT,NOT NULL,Reference to ledger_journals
+ledger_entries,account_code,TEXT,NOT NULL,Reference to chart_of_accounts
+ledger_entries,debit_cents,BIGINT,NOT NULL,Nonnegative debit amount
+ledger_entries,credit_cents,BIGINT,NOT NULL,Nonnegative credit amount
+ledger_entries,source_system,TEXT,NOT NULL,Stable external identifier namespace
+ledger_entries,batch_id,TEXT,NOT NULL,Import batch identifier
+ledger_entries,source_created_at,TIMESTAMPTZ,NOT NULL,Time recorded by the source
+reconciliation_runs,run_id,TEXT,PK,Run identifier
+reconciliation_runs,started_at,TIMESTAMPTZ,NOT NULL,Run start
+reconciliation_runs,as_of_date,DATE,NOT NULL,Evaluation cutoff
+reconciliation_runs,status,TEXT,NOT NULL,Run state
+reconciliation_runs,rule_version,TEXT,NOT NULL,Rule set version
+match_groups,match_id,TEXT,PK,Reconciliation group
+match_groups,run_id,TEXT,NOT NULL,Reference to reconciliation_runs
+match_groups,stage,TEXT,NOT NULL,Reconciliation stage
+match_groups,rule_id,TEXT,NOT NULL,Rule identifier
+match_groups,rule_version,TEXT,NOT NULL,Rule version
+match_groups,status,TEXT,NOT NULL,Group status
+match_groups,currency,TEXT,NOT NULL,Group currency
+match_groups,variance_cents,BIGINT,nullable,Actual less expected
+match_groups,created_at,TIMESTAMPTZ,NOT NULL,Creation time
+match_members,member_id,TEXT,PK,Member identifier
+match_members,match_id,TEXT,NOT NULL,Reference to match_groups
+match_members,source_type,TEXT,NOT NULL,Source table
+match_members,source_id,TEXT,NOT NULL,Source record identifier
+match_members,role,TEXT,NOT NULL,expected or actual
+match_members,allocation_cents,BIGINT,NOT NULL,Signed allocated amount
+exceptions,exception_id,TEXT,PK,Case identifier
+exceptions,match_id,TEXT,nullable,Optional match group
+exceptions,dedupe_key,TEXT,NOT NULL,Unique stable stage/entity/type case key
+exceptions,type,TEXT,NOT NULL,Exception classification
+exceptions,amount_cents,BIGINT,nullable,Signed variance when quantifiable
+exceptions,currency,TEXT,NOT NULL,Case currency
+exceptions,status,TEXT,NOT NULL,Workflow state
+exceptions,assigned_to,TEXT,nullable,Reference to users
+exceptions,opened_at,TIMESTAMPTZ,NOT NULL,Creation time
+case_history,event_id,TEXT,PK,Audit event identifier
+case_history,exception_id,TEXT,NOT NULL,Reference to exceptions
+case_history,actor,TEXT,NOT NULL,User or system actor
+case_history,action,TEXT,NOT NULL,Recorded action
+case_history,timestamp,TIMESTAMPTZ,NOT NULL,Event time
+case_history,note,TEXT,nullable,Reviewer explanation
+evidence_links,evidence_id,TEXT,PK,Evidence identifier
+evidence_links,exception_id,TEXT,NOT NULL,Reference to exceptions
+evidence_links,source_path,TEXT,NOT NULL,Relative immutable file location
+evidence_links,source_record_id,TEXT,nullable,Identifier inside evidence
+evidence_links,added_at,TIMESTAMPTZ,NOT NULL,Evidence attachment time
+ingestion_batches,batch_id,TEXT,PK,Logical source export batch
+ingestion_batches,source,TEXT,NOT NULL,Source namespace
+ingestion_batches,exported_at,TIMESTAMPTZ,NOT NULL,Synthetic export cutoff
+ingestion_batches,state,TEXT,NOT NULL,export_ready; not imported into an application

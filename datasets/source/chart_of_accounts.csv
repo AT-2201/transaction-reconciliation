@@ -1,0 +1,10 @@
+account_code,account_name
+1000,Bank cash
+1100,Processor clearing
+1200,Processor reserve
+4000,Sales
+4010,Refunds
+6100,Processing fees
+6200,Chargebacks
+6300,Bank fees
+2990,Unclassified bank credits

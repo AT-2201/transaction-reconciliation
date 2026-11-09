@@ -1,0 +1,13 @@
+-- Run psql from the datasets directory after creating tables with documentation/schema.sql.
+\copy ingestion_batches FROM 'source/ingestion_batches.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy customers FROM 'source/customers.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy bank_accounts FROM 'source/bank_accounts.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy chart_of_accounts FROM 'source/chart_of_accounts.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy users FROM 'source/users.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy orders FROM 'source/orders.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy processor_transactions FROM 'source/processor_transactions.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy processor_payouts FROM 'source/processor_payouts.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy payout_items FROM 'source/payout_items.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy bank_transactions FROM 'source/bank_transactions.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy ledger_journals FROM 'source/ledger_journals.csv' WITH (FORMAT csv, HEADER true, NULL '')
+\copy ledger_entries FROM 'source/ledger_entries.csv' WITH (FORMAT csv, HEADER true, NULL '')

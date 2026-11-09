@@ -1,0 +1,132 @@
+{
+  "seed": 20261105,
+  "as_of_date": "2026-11-05",
+  "validation_engine": "SQLite load of supplied schema and CSV files; PostgreSQL itself not executed",
+  "checks": [
+    {
+      "check": "ingestion_batches: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "customers: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "bank_accounts: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "chart_of_accounts: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "users: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "orders: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "processor_transactions: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "processor_payouts: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "payout_items: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "bank_transactions: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "ledger_journals: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "ledger_entries: CSV row count",
+      "passed": true
+    },
+    {
+      "check": "Source foreign keys valid",
+      "passed": true
+    },
+    {
+      "check": "Every journal balances",
+      "passed": true
+    },
+    {
+      "check": "No future bank records",
+      "passed": true
+    },
+    {
+      "check": "All source timestamps precede export cutoff",
+      "passed": true
+    },
+    {
+      "check": "Each event is assigned at most once",
+      "passed": true
+    },
+    {
+      "check": "Only two intentional missing membership rows",
+      "passed": true
+    },
+    {
+      "check": "Replay IDs already exist",
+      "passed": true
+    },
+    {
+      "check": "Holdout includes each anomaly class",
+      "passed": true
+    },
+    {
+      "check": "Membership contributions equal source event amounts",
+      "passed": true
+    },
+    {
+      "check": "All adjustments occur after related events",
+      "passed": true
+    },
+    {
+      "check": "Refunds and chargebacks do not exceed original capture",
+      "passed": true
+    },
+    {
+      "check": "All expected amounts independently recomputed from imported CSVs",
+      "passed": true
+    }
+  ],
+  "all_passed": true,
+  "source_row_counts": {
+    "ingestion_batches": 4,
+    "customers": 2500,
+    "bank_accounts": 1,
+    "chart_of_accounts": 9,
+    "users": 2,
+    "orders": 10000,
+    "processor_transactions": 20590,
+    "processor_payouts": 120,
+    "payout_items": 20538,
+    "bank_transactions": 120,
+    "ledger_journals": 20658,
+    "ledger_entries": 41316
+  },
+  "expected_results": {
+    "bank_to_ledger/exception": 4,
+    "bank_to_ledger/reconciled": 116,
+    "order_to_payment/exception": 50,
+    "order_to_payment/not_eligible": 200,
+    "order_to_payment/partial": 50,
+    "order_to_payment/reconciled": 9700,
+    "payment_to_payout/exception": 4,
+    "payment_to_payout/reconciled": 116,
+    "payout_to_bank/exception": 6,
+    "payout_to_bank/pending": 2,
+    "payout_to_bank/reconciled": 108,
+    "payout_to_bank/review": 4
+  }
+}

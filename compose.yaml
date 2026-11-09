@@ -1,0 +1,12 @@
+services:
+  workbench:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      RECON_DEMO: "1"
+    volumes:
+      - reconciliation-data:/project/data
+    restart: unless-stopped
+volumes:
+  reconciliation-data:

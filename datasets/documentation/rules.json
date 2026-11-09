@@ -1,0 +1,25 @@
+{
+  "as_of_date": "2026-11-05",
+  "currency": "USD",
+  "money_unit": "integer_cents",
+  "seed": 20261105,
+  "settlement_lag_weekdays": 2,
+  "arrival_grace_weekdays": 2,
+  "holidays_modeled": false,
+  "amount_tolerance_cents": 0,
+  "auto_match_requires": [
+    "stable reference",
+    "same account",
+    "same currency",
+    "exact amount",
+    "unique eligible candidate",
+    "compatible status"
+  ],
+  "bank_candidate_date_window_weekdays": 2,
+  "missing_reference_policy": "review_even_if_unique_amount_date_candidate",
+  "order_capture_policy": "sum succeeded captures only; exclude authorizations and later refunds",
+  "item_sign_policy": "capture/reserve_release positive; fee/refund/chargeback/reserve_hold negative",
+  "split_policy": "payout settlement days 1-48 development, 49-60 holdout; order split by order day; linked records may span splits",
+  "snapshot_policy": "No bank records later than as_of_date. Future expected arrivals are pending.",
+  "stage_policy": "Evaluate each stage independently. A clean bank link does not resolve an upstream payout composition failure."
+}

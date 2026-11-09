@@ -1,0 +1,5 @@
+txn_id,order_id,related_txn_id,type,amount_cents,authorized_amount_cents,currency,status,processed_at,source_system,batch_id,source_created_at
+INVALID-1,ORD-000001,,capture,9185,,EUR,succeeded,2026-09-06T10:00:00Z,processor,BATCH-processor-001,2026-09-06T10:00:00Z
+,ORD-000001,TXN-0000001,fee,-296,,USD,succeeded,2026-09-06T10:00:00Z,processor,BATCH-processor-001,2026-09-06T10:00:00Z
+INVALID-3,ORD-000001,,capture,not_a_number,,USD,succeeded,2026-09-06T10:00:00Z,processor,BATCH-processor-001,2026-09-06T10:00:00Z
+INVALID-4,ORD-000001,TXN-0000003,fee,-296,,USD,unknown,2026-09-06T10:00:00Z,processor,BATCH-processor-001,2026-09-06T10:00:00Z

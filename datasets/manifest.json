@@ -1,0 +1,192 @@
+{
+  "dataset_version": "1.0.0",
+  "seed": 20261105,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 7243,
+      "sha256": "d7bb68a34dcd7f3c2dc8d2c4e80fc730e89e5a53e2387328699dc3cc684fa269"
+    },
+    {
+      "path": "documentation/data_dictionary.csv",
+      "bytes": 8207,
+      "sha256": "635554cd0b8e5604b024b29a6d798f737e0176aea77099598648f6f29d9d59b6",
+      "rows": 120
+    },
+    {
+      "path": "documentation/data_model.md",
+      "bytes": 1674,
+      "sha256": "1d1254e49aab2d4c2714c0c0772f9277082fbc0175609e866a42567e8ae219cc"
+    },
+    {
+      "path": "documentation/load_source.psql",
+      "bytes": 1213,
+      "sha256": "af92cc78db28dc1a8638243d7486f091ff838413454750c0bd960c4a71180276"
+    },
+    {
+      "path": "documentation/rules.json",
+      "bytes": 1093,
+      "sha256": "7ca1a83a01a7a1ea163d3d54ec84e5bfbe3d6a2a450809f74f0521c288e69f61"
+    },
+    {
+      "path": "documentation/schema.sql",
+      "bytes": 6066,
+      "sha256": "f476d5b04ebe160a25e83e1791776bd92a7648fbdd322e0093c10d7ee5ddf677"
+    },
+    {
+      "path": "documentation/validation_report.json",
+      "bytes": 3100,
+      "sha256": "e337e5244d249d52b156c0c3c651851b5fd77221428b4e84cc69c2c2e0a6ff32"
+    },
+    {
+      "path": "evaluation/expected_checks.csv",
+      "bytes": 1082809,
+      "sha256": "7aa40cea29f1949722e63c74a1d43b0a6eb7ad7f2af4b39d5f3ef565d6af22bb",
+      "rows": 10360
+    },
+    {
+      "path": "evaluation/fixture_expectations.csv",
+      "bytes": 453,
+      "sha256": "c3e46e539961298c072b6964572f73296cf6331c884d80343cbf98f0756bf390",
+      "rows": 3
+    },
+    {
+      "path": "evaluation/scenario_catalog.csv",
+      "bytes": 10657,
+      "sha256": "8cc7a1ce3003393094d8e53a207396f987e8c6b38ab031f3aa471cdd2cc97134",
+      "rows": 120
+    },
+    {
+      "path": "evaluation/true_links.csv",
+      "bytes": 1396306,
+      "sha256": "dd340929222654ae1604da0ef8ebbc228d90d06054f61415352d45b002fdd7de",
+      "rows": 30718
+    },
+    {
+      "path": "fixtures/invalid/processor_transactions_invalid.csv",
+      "bytes": 647,
+      "sha256": "0bb9ba39a65ab9daa2e91d24d2507e31cdfdb4c5b4c4d255b1ef5a4751504c63",
+      "rows": 4
+    },
+    {
+      "path": "fixtures/late_evidence/missing_payout_items.csv",
+      "bytes": 277,
+      "sha256": "7afbb7853571a0abdf624271a197c30ee6037da57c13c2daac56e79f46fbbe9c",
+      "rows": 2
+    },
+    {
+      "path": "fixtures/replay/processor_transactions_replay.csv",
+      "bytes": 13048,
+      "sha256": "b08c4c78d4b570b20773965d840c7ec7c96637f51f3d6751f3a09e3b30a39622",
+      "rows": 100
+    },
+    {
+      "path": "runtime_templates/case_history.csv",
+      "bytes": 51,
+      "sha256": "1290a0003b80692a494f5ac38db747820da855f376724eeae58e294008605f7e",
+      "rows": 0
+    },
+    {
+      "path": "runtime_templates/evidence_links.csv",
+      "bytes": 64,
+      "sha256": "5ee1d7277d1afa6fa98e03787d9eff341fcd0bc8b222d8667d51f9a245815fe1",
+      "rows": 0
+    },
+    {
+      "path": "runtime_templates/exceptions.csv",
+      "bytes": 90,
+      "sha256": "7571cd4050b40479f0b33aaf51d9b6ae93172e610ba22d96da540f1de6587ceb",
+      "rows": 0
+    },
+    {
+      "path": "runtime_templates/match_groups.csv",
+      "bytes": 86,
+      "sha256": "ef8c474cd46df78c6ef93635ec155606f9209cf5c769cb4315240f6841ac7561",
+      "rows": 0
+    },
+    {
+      "path": "runtime_templates/match_members.csv",
+      "bytes": 64,
+      "sha256": "b093c44dd02f38466361402aa12da8080f197bcb2b3d9a7975ff19501f77b64c",
+      "rows": 0
+    },
+    {
+      "path": "runtime_templates/reconciliation_runs.csv",
+      "bytes": 50,
+      "sha256": "af7810d649a2f5057bc9786422b7bd3e5fe25789401acf9b3f6d0acec78f5045",
+      "rows": 0
+    },
+    {
+      "path": "source/bank_accounts.csv",
+      "bytes": 60,
+      "sha256": "51a621d9863940263b817aa8d2803ce7fee676d7ec2e29a2f9903a5a1bda98e0",
+      "rows": 1
+    },
+    {
+      "path": "source/bank_transactions.csv",
+      "bytes": 14950,
+      "sha256": "dc982de4a3ff5aeb5793d0140ab3247f2118345bcbff9ab55e7ad3c27fa39381",
+      "rows": 120
+    },
+    {
+      "path": "source/chart_of_accounts.csv",
+      "bytes": 206,
+      "sha256": "ae5bcdf86d90151b35e999009307fb8054ddf7783dc20636a6089eb2eed61bec",
+      "rows": 9
+    },
+    {
+      "path": "source/customers.csv",
+      "bytes": 82524,
+      "sha256": "36a83a549133a30728f4aef2ceba7981889908379aa2134d71bf28c65b53132a",
+      "rows": 2500
+    },
+    {
+      "path": "source/ingestion_batches.csv",
+      "bytes": 281,
+      "sha256": "4ed1d2923049ae8c3d785cc54977ab052a5a93b0f83cf0593e214058ce44ad03",
+      "rows": 4
+    },
+    {
+      "path": "source/ledger_entries.csv",
+      "bytes": 3481993,
+      "sha256": "968c48dd3338319b9fae0bf34345253f4274e147a48c17beaeaffa7805f63235",
+      "rows": 41316
+    },
+    {
+      "path": "source/ledger_journals.csv",
+      "bytes": 1900392,
+      "sha256": "174c3455030a49ce0796344ba6b71ac641e9332092b83769704e381c7a6499f0",
+      "rows": 20658
+    },
+    {
+      "path": "source/orders.csv",
+      "bytes": 1120346,
+      "sha256": "2ccddb585629bea97e9809301b3c6c946af7ab21d7600b03a18082c020530e5c",
+      "rows": 10000
+    },
+    {
+      "path": "source/payout_items.csv",
+      "bytes": 1823339,
+      "sha256": "e19447d6a41689151d34cd25ad69f82c07c369de0afbefb10cfea9d3751e137e",
+      "rows": 20538
+    },
+    {
+      "path": "source/processor_payouts.csv",
+      "bytes": 14561,
+      "sha256": "f2560b0ce83f4429e684ed4cce86a9cce86bbe1ea0cd80977f10358b0c10a2a9",
+      "rows": 120
+    },
+    {
+      "path": "source/processor_transactions.csv",
+      "bytes": 2666362,
+      "sha256": "f6c15410c8d7ffc93c3ba72bd97497b6086c2a34a64b07abd52d4e31e6543098",
+      "rows": 20590
+    },
+    {
+      "path": "source/users.csv",
+      "bytes": 91,
+      "sha256": "0016576da3f2f6b36233930c016a6d6c55ad52ff51e6e47719cb888b1a6ba476",
+      "rows": 2
+    }
+  ]
+}

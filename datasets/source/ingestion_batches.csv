@@ -1,0 +1,5 @@
+batch_id,source,exported_at,state
+BATCH-storefront-001,storefront,2026-11-05T23:59:59Z,export_ready
+BATCH-processor-001,processor,2026-11-05T23:59:59Z,export_ready
+BATCH-bank-001,bank,2026-11-05T23:59:59Z,export_ready
+BATCH-ledger-001,ledger,2026-11-05T23:59:59Z,export_ready

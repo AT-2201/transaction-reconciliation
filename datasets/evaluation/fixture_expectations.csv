@@ -1,0 +1,4 @@
+fixture,expected_action,expected_count,note
+fixtures/replay/processor_transactions_replay.csv,deduplicate,100,Import after source file; zero new canonical events
+fixtures/invalid/processor_transactions_invalid.csv,quarantine,4,One invalid field per row; do not import into canonical tables
+fixtures/late_evidence/missing_payout_items.csv,controlled_amendment,2,"After baseline evaluation, add missing membership rows and rerun; retain case history"
