@@ -1,8 +1,8 @@
-# Reconcile · Transaction Reconciliation & Exception Automation
+# Reconcile
 
 A complete local V1 of the transaction reconciliation and exception review project. It imports the synthetic NovaCommerce records, executes deterministic checks, and provides a persistent React workbench backed by FastAPI.
 
-![Reconciliation workspace](workbench-preview.jpg)
+[Open the public demo](https://at-2201.github.io/transaction-reconciliation/) to browse the synthetic reconciliation results, exceptions, and source evidence. The hosted demo is read-only. Run the local app to import files, execute new runs, or review cases.
 
 ## Start the project
 
@@ -34,7 +34,7 @@ Alternative: `docker compose up --build` starts the same application with a pers
 ## Demo workflow
 
 1. Enter as demo approver. The baseline has **10,360 checks**, **10,040 reconciled**, **68 review cases**, **50 partial orders**, **200 ineligible orders**, and **2 pending payouts**.
-2. On **Overview**, filter the case queue by stage and select a source record.
+2. Open **Exception queue**, filter by a stage, and select a source record.
 3. Inspect **Source evidence**. In **Review actions**, assign the case to the demo reviewer. Add a note in **Activity & notes**.
 4. Attach the matching source CSV (or retained imported file) and record identifier, explain what it demonstrates, and update the status. An active difference requires evidence before resolution.
 5. For missing-reference or ambiguous bank candidates, select the verified bank transaction and approve as an approver who is not the assigned owner. Approval records a decision; it does not change source data or move funds.
