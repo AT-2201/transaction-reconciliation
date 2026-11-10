@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Activity, ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, FileCheck2, FileText, GitBranch, LoaderCircle, LogOut, Play, Plus, Search, ShieldCheck, Upload, X} from 'lucide-react';
 import './styles.css';
+import demoContext from '../../datasets/demo_context.json';
 import {demoApi, exceptionExport, publicDemo} from './public-demo';
 
 const STAGES={order_to_payment:'Order → payment',payment_to_payout:'Payment → payout',payout_to_bank:'Payout → bank',bank_to_ledger:'Bank → ledger'};
@@ -119,7 +120,6 @@ function App(){
     {isDesk?<CaseWorkspace user={user} users={summary.users||[]} revision={revision} refresh={refresh}/>
      :viewName==='checks'?<Checks key={view} revision={revision} initialStage={params.get('stage')||''}/>
      :viewName==='runs'?<Runs revision={revision}/>:<Guide/>}
-    {isDesk&&<details className="payout-activity"><summary>Processor payout activity</summary><SettlementChart trend={summary.trend}/></details>}
    </>}
    <footer><span>NOVACOMMERCE / SAMPLE DATA</span><span>USD</span></footer>
   </main>
@@ -164,26 +164,70 @@ function SettlementChart({trend}){
 
 function DeskStatus({data,navigate}){
  const total=Object.values(data.counts).reduce((sum,count)=>sum+count,0);
+ const matched=data.counts.reconciled||0;
+ const rate=total?matched/total*100:0;
  return <>
-  <section className="desk-status" aria-label="Latest reconciliation">
-   <button className="desk-status-main" onClick={()=>document.getElementById('case-queue')?.focus()}><span>Open exceptions <ArrowUpRight size={13}/></span><strong>{number(data.open_cases)}</strong></button>
-   <div><span>Reconciled</span><strong>{number(data.counts.reconciled)} <small>/ {number(total)} checks</small></strong></div>
-   <div><span>Flagged variance</span><strong>{money(data.flagged_variance_cents)}</strong></div>
-   <div><span>Pending settlements</span><strong>{number(data.counts.pending)}</strong></div>
-  </section>
-  <div className="match-index" aria-label="Matches by stage">
-   {Object.entries(STAGES).map(([key,label])=>{
-    const results=data.stages.filter(row=>row.stage===key);
-    const matched=results.find(row=>row.status==='reconciled')?.count||0;
-    const total=results.reduce((sum,row)=>sum+row.count,0);
-    return <button key={key} onClick={()=>navigate('checks?stage='+key)}>
-     <span className="match-label">{label}<ArrowUpRight size={13}/></span>
-     <strong>{number(matched)}<small> / {number(total)}</small></strong>
-     <span className="match-meter" aria-hidden="true"><i style={{width:(total?matched/total*100:0)+'%'}}/></span>
-    </button>
-   })}
+  <div className="desk-visuals">
+   <section className="match-overview" aria-label="Latest reconciliation">
+    <h2>Match results</h2>
+    <div className="match-overview-body">
+     <div className="match-ring" style={{'--match-angle':rate+'%'}}>
+      <div><strong>{total?rate.toFixed(1)+'%':'—'}</strong><span>Reconciled</span></div>
+     </div>
+     <div className="match-totals">
+      <div><strong>{number(matched)}</strong><span>of {number(total)} checks reconciled</span></div>
+      <button onClick={()=>document.getElementById('case-queue')?.focus()}>
+       {number(data.open_cases)} open cases <ArrowUpRight size={14}/>
+      </button>
+     </div>
+    </div>
+    <dl className="summary-details">
+     <div><dt>Flagged variance</dt><dd>{money(data.flagged_variance_cents)}</dd></div>
+     <div><dt>Pending settlements</dt><dd>{number(data.counts.pending)}</dd></div>
+    </dl>
+   </section>
+   <SettlementChart trend={data.trend}/>
   </div>
+  <details className="stage-breakdown">
+   <summary>Match results by stage</summary>
+   <div className="match-index" aria-label="Matches by stage">
+    {Object.entries(STAGES).map(([key,label])=>{
+     const results=data.stages.filter(row=>row.stage===key);
+     const matched=results.find(row=>row.status==='reconciled')?.count||0;
+     const total=results.reduce((sum,row)=>sum+row.count,0);
+     return <button key={key} onClick={()=>navigate('checks?stage='+key)}>
+      <span className="match-label">{label}<ArrowUpRight size={13}/></span>
+      <strong>{number(matched)}<small> / {number(total)}</small></strong>
+      <span className="match-meter" aria-hidden="true"><i style={{width:(total?matched/total*100:0)+'%'}}/></span>
+     </button>
+    })}
+   </div>
+  </details>
  </>
+}
+
+function orderProfile(orderId){
+ if(!/^ORD-\d{6}$/.test(orderId))return null;
+ const entry=demoContext.orders[Number(orderId.slice(4))-1];
+ if(!entry)return null;
+ const [customerNumber,channelIndex]=entry;
+ const customerId='CUST-'+String(customerNumber).padStart(5,'0');
+ return {customerId,customer:demoContext.customers[customerId],channel:demoContext.channels[channelIndex]};
+}
+
+function CaseContext({evidence}){
+ const order=evidence.orders?.[0];
+ const profile=order&&orderProfile(order.order_id);
+ const customer=profile?.customerId===order?.customer_id?profile?.customer:null;
+ const bank=evidence.bank_transactions?.find(row=>row.account_id===demoContext.bank_account.id);
+ const payout=evidence.processor_payouts?.[0];
+ const account=demoContext.bank_account;
+ if(!customer&&!bank&&!payout)return null;
+ return <div className="case-context">
+  {customer&&<><strong>{customer.name}</strong><span>{customer.market} · {profile.channel}</span></>}
+  {!customer&&bank&&<><strong>{account.institution}</strong><span>{account.name}{bank.reference?' · '+bank.reference:''}</span></>}
+  {!customer&&!bank&&payout&&<><strong>{demoContext.processor}</strong><span>Merchant settlement · {payout.payout_id}</span></>}
+ </div>
 }
 
 function CaseWorkspace({user,users,revision,refresh}){
@@ -194,7 +238,7 @@ function CaseWorkspace({user,users,revision,refresh}){
  const [page,setPage]=useState(0);
  const [selected,setSelected]=useState(null);
  const [error,setError]=useState('');
- const pageSize=12;
+ const pageSize=6;
 
  useEffect(()=>{
   let current=true;
@@ -247,7 +291,7 @@ function CaseWorkspace({user,users,revision,refresh}){
    {error?<div className="error" role="alert">{error}</div>:!result?<Loading/>:result.items.length?<div className="index-entries">
     {result.items.map(item=><button key={item.id} className="index-entry" aria-pressed={item.id===active?.id} onClick={()=>openCase(item.id)}>
      <span className="index-entry-top"><strong>{item.entity_id}</strong><span>{money(item.variance_cents)}</span></span>
-     <span className="index-finding">{human(item.type)}</span>
+     <span className="index-finding">{orderProfile(item.entity_id)?.customer?.name||human(item.type)}</span>
      <span className="index-entry-meta"><Badge status={item.status}/><span>{STAGES[item.stage]}</span></span>
     </button>)}
    </div>:<Empty title="No cases found" text=""/>}
@@ -357,7 +401,7 @@ function ImportsDialog({user,refresh,revision,close}){
   </section>
  </dialog>
 }
-function DataTable({rows,columns}){if(!rows.length)return <Empty title="No source records"/>;const cols=columns||Object.keys(rows[0]);return <div className="table-scroll source-table"><table><thead><tr>{cols.map(c=><th key={c}>{human(c)}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{cols.map(k=><td key={k} className={k.endsWith('_cents')?'amount':'mono'}>{r[k]==null?<span className="muted">—</span>:String(r[k])}</td>)}</tr>)}</tbody></table></div>}
+function DataTable({rows,columns,formatMoney=false}){if(!rows.length)return <Empty title="No source records"/>;const cols=columns||Object.keys(rows[0]);return <div className="table-scroll source-table"><table><thead><tr>{cols.map(c=><th key={c}>{human(formatMoney?c.replace(/_cents$/,''):c)}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{cols.map(k=><td key={k} className={k.endsWith('_cents')?'amount':'mono'}>{r[k]==null?<span className="muted">—</span>:formatMoney&&k.endsWith('_cents')?money(r[k]):String(r[k])}</td>)}</tr>)}</tbody></table></div>}
 
 function Runs({revision}){
  const [runs,setRuns]=useState(null),[error,setError]=useState(''),[selected,setSelected]=useState(null);
@@ -380,7 +424,7 @@ function CasePanel({id,user,users,changed,revision}){
  },[id,revision]);
  async function action(kind,extra={}){if(!detail)return;setBusy(true);setError('');try{await api(kind==='approve'?`/matches/${id}/approve`:`/exceptions/${id}/${kind}`,{method:'POST',body:JSON.stringify({note:note.trim()||(['assign'].includes(kind)?'Case ownership updated':' '),version:detail.case.version,...extra})});setNote('');await load();changed('Case updated.')}catch(e){setError(e.message);if(e.message.includes('Refresh'))await load().catch(()=>{})}finally{setBusy(false)}}
  const [fileOptions,setFileOptions]=useState([]); useEffect(()=>{api('/evidence-files').then(setFileOptions).catch(e=>setError(e.message))},[]);
- return <section className="case-panel" aria-label="Selected case"><div className="panel-top"><span><FileCheck2 size={15}/> EXCEPTION DETAILS</span>{detail&&<span>{detail.case.owner||'Unassigned'}</span>}</div>{!detail?<>{error?<div className="error">{error}</div>:<Loading/>}</>:<><div className="panel-title"><div className="eyebrow">{detail.case.id}</div><h2>{detail.case.entity_id}</h2><p>{human(detail.case.type)}</p><div><Badge status={detail.case.status}/><span>{STAGES[detail.case.stage]}</span></div></div><div className="case-amounts"><div><span>Expected</span><strong>{money(detail.check.expected_cents)}</strong></div><div><span>Observed</span><strong>{money(detail.check.actual_cents)}</strong></div><div><span>Difference</span><strong className="difference">{money(detail.check.variance_cents)}</strong></div></div>{!detail.case.finding_active&&<div className="import-feedback"><CheckCircle2 size={17}/>Source difference cleared. Reviewer closure required.</div>}{detail.case.finding_active&&detail.case.status==='resolved'&&<div className="import-feedback">Source finding retained. Resolution records the reviewer’s decision.</div>}<div className="panel-tabs">{[['evidence','Evidence'],['activity','Activity'],['resolve','Review']].filter(([key])=>!publicDemo||key!=='resolve').map(([k,v])=><button key={k} className={tab===k?'selected':''} onClick={()=>setTab(k)}>{v}</button>)}</div><div className="panel-content">{error&&<div className="error" role="alert">{error}</div>}{tab==='evidence'?<>{Object.entries(detail.evidence).map(([table,rows])=><div className="evidence-block" key={table}><h3>{human(table)} <span>{rows.length}</span></h3>{rows.length?<DataTable rows={rows} columns={Object.keys(rows[0]).filter(k=>!['source_system','batch_id','source_created_at'].includes(k))}/>:<p className="muted">No linked source records found.</p>}</div>)}{!publicDemo&&<button className="secondary" onClick={()=>setTab('resolve')}>Review this difference <ArrowRight size={16}/></button>}</>:tab==='activity'?<><h3>Investigation history</h3><div className="timeline">{detail.history.map(h=><div className="timeline-item" key={h.id}><span className="timeline-dot"/><strong>{human(h.action)}</strong><small>{h.actor_name||h.actor} · {datetime(h.created_at)}</small><p>{h.note}</p></div>)}</div>{!publicDemo&&<><label className="field-label">Add a review note<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="What did you investigate or confirm?" rows="4"/></label><button className="primary" disabled={busy||!note.trim()} onClick={()=>action('notes')}>Save note <Plus size={15}/></button></>}</>:<><div className="action-section"><h3>Case ownership</h3><label className="field-label">Assign to<select value={owner} onChange={e=>setOwner(e.target.value)}><option value="">Unassigned</option>{users.map(u=><option key={u.user_id} value={u.user_id}>{u.display_name}</option>)}</select></label><button className="secondary" disabled={busy} onClick={()=>action('assign',{assigned_to:owner||null})}>Update owner</button></div><div className="action-section"><h3>Supporting evidence</h3><p>Attach the original file and, optionally, the exact record.</p><label className="field-label">Source file<select value={sourcePath} onChange={e=>setSourcePath(e.target.value)}><option value="">Select an evidence file</option>{fileOptions.map(f=><option value={f.path} key={f.path}>{f.label}</option>)}</select></label><label className="field-label">Record identifier<input value={record} onChange={e=>setRecord(e.target.value)} placeholder="Optional source record ID"/></label><label className="field-label">Investigation note / decision reason<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Explain what the evidence demonstrates…" rows="3"/></label><button className="secondary" disabled={busy||!sourcePath||!note.trim()} onClick={()=>action('evidence',{source_path:sourcePath,source_record_id:record})}><Plus size={15}/>Attach evidence</button>{detail.attachments.map(a=><div className="attachment" key={a.id}><FileText size={16}/><div><strong>{a.source_path}</strong><small>{a.note}</small></div><Check size={15}/></div>)}</div><div className="action-section"><h3>Update case status</h3><p>Closing an active difference requires supporting evidence and the approver role.</p><select aria-label="New case status" value={targetStatus} onChange={e=>setTargetStatus(e.target.value)}>{['open','in_review','awaiting_evidence','resolved','dismissed'].map(s=><option key={s} value={s} disabled={['resolved','dismissed'].includes(s)&&user.role!=='approver'}>{STATUS[s]}</option>)}</select><button className="primary" disabled={busy||!note.trim()} onClick={()=>action('status',{status:targetStatus})}>Save status <Check size={16}/></button></div>{detail.case.stage==='payout_to_bank'&&detail.check.status==='review'&&<div className="action-section"><h3>Approve a proposed match</h3><p>An approver other than the case owner must confirm the candidate with supporting evidence.</p><select aria-label="Bank candidate" value={bank} onChange={e=>setBank(e.target.value)}>{detail.check.candidates.map(b=><option value={b} key={b}>{b}</option>)}</select><button className="primary" disabled={busy||user.role!=='approver'||!bank||!note.trim()} onClick={()=>action('approve',{bank_txn_id:bank})}><ShieldCheck size={16}/>Approve selected match</button></div>}</>}</div><div className="panel-footer"><ShieldCheck size={15}/>Audit history available in Activity</div></>}</section>
+ return <section className="case-panel" aria-label="Selected case"><div className="panel-top"><span><FileCheck2 size={15}/> EXCEPTION DETAILS</span>{detail&&<span>{detail.case.owner||'Unassigned'}</span>}</div>{!detail?<>{error?<div className="error">{error}</div>:<Loading/>}</>:<><div className="panel-title"><div className="eyebrow">{detail.case.id}</div><h2>{detail.case.entity_id}</h2><p>{human(detail.case.type)}</p><CaseContext evidence={detail.evidence}/><div><Badge status={detail.case.status}/><span>{STAGES[detail.case.stage]}</span></div></div><div className="case-amounts"><div><span>Expected</span><strong>{money(detail.check.expected_cents)}</strong></div><div><span>Observed</span><strong>{money(detail.check.actual_cents)}</strong></div><div><span>Difference</span><strong className="difference">{money(detail.check.variance_cents)}</strong></div></div>{!detail.case.finding_active&&<div className="import-feedback"><CheckCircle2 size={17}/>Source difference cleared. Reviewer closure required.</div>}{detail.case.finding_active&&detail.case.status==='resolved'&&<div className="import-feedback">Source finding retained. Resolution records the reviewer’s decision.</div>}<div className="panel-tabs">{[['evidence','Evidence'],['activity','Activity'],['resolve','Review']].filter(([key])=>!publicDemo||key!=='resolve').map(([k,v])=><button key={k} className={tab===k?'selected':''} onClick={()=>setTab(k)}>{v}</button>)}</div><div className="panel-content">{error&&<div className="error" role="alert">{error}</div>}{tab==='evidence'?<>{Object.entries(detail.evidence).map(([table,rows])=><details className="evidence-block evidence-disclosure" key={table}><summary>{human(table)} <span>{number(rows.length)}</span></summary>{rows.length?<DataTable rows={rows} columns={Object.keys(rows[0]).filter(k=>!['source_system','batch_id','source_created_at'].includes(k))} formatMoney/>:<p className="muted">No linked source records found.</p>}</details>)}{!publicDemo&&<button className="secondary" onClick={()=>setTab('resolve')}>Review this difference <ArrowRight size={16}/></button>}</>:tab==='activity'?<><h3>Investigation history</h3><div className="timeline">{detail.history.map(h=><div className="timeline-item" key={h.id}><span className="timeline-dot"/><strong>{human(h.action)}</strong><small>{h.actor_name||h.actor} · {datetime(h.created_at)}</small><p>{h.note}</p></div>)}</div>{!publicDemo&&<><label className="field-label">Add a review note<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="What did you investigate or confirm?" rows="4"/></label><button className="primary" disabled={busy||!note.trim()} onClick={()=>action('notes')}>Save note <Plus size={15}/></button></>}</>:<><div className="action-section"><h3>Case ownership</h3><label className="field-label">Assign to<select value={owner} onChange={e=>setOwner(e.target.value)}><option value="">Unassigned</option>{users.map(u=><option key={u.user_id} value={u.user_id}>{u.display_name}</option>)}</select></label><button className="secondary" disabled={busy} onClick={()=>action('assign',{assigned_to:owner||null})}>Update owner</button></div><div className="action-section"><h3>Supporting evidence</h3><p>Attach the original file and, optionally, the exact record.</p><label className="field-label">Source file<select value={sourcePath} onChange={e=>setSourcePath(e.target.value)}><option value="">Select an evidence file</option>{fileOptions.map(f=><option value={f.path} key={f.path}>{f.label}</option>)}</select></label><label className="field-label">Record identifier<input value={record} onChange={e=>setRecord(e.target.value)} placeholder="Optional source record ID"/></label><label className="field-label">Investigation note / decision reason<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Explain what the evidence demonstrates…" rows="3"/></label><button className="secondary" disabled={busy||!sourcePath||!note.trim()} onClick={()=>action('evidence',{source_path:sourcePath,source_record_id:record})}><Plus size={15}/>Attach evidence</button>{detail.attachments.map(a=><div className="attachment" key={a.id}><FileText size={16}/><div><strong>{a.source_path}</strong><small>{a.note}</small></div><Check size={15}/></div>)}</div><div className="action-section"><h3>Update case status</h3><p>Closing an active difference requires supporting evidence and the approver role.</p><select aria-label="New case status" value={targetStatus} onChange={e=>setTargetStatus(e.target.value)}>{['open','in_review','awaiting_evidence','resolved','dismissed'].map(s=><option key={s} value={s} disabled={['resolved','dismissed'].includes(s)&&user.role!=='approver'}>{STATUS[s]}</option>)}</select><button className="primary" disabled={busy||!note.trim()} onClick={()=>action('status',{status:targetStatus})}>Save status <Check size={16}/></button></div>{detail.case.stage==='payout_to_bank'&&detail.check.status==='review'&&<div className="action-section"><h3>Approve a proposed match</h3><p>An approver other than the case owner must confirm the candidate with supporting evidence.</p><select aria-label="Bank candidate" value={bank} onChange={e=>setBank(e.target.value)}>{detail.check.candidates.map(b=><option value={b} key={b}>{b}</option>)}</select><button className="primary" disabled={busy||user.role!=='approver'||!bank||!note.trim()} onClick={()=>action('approve',{bank_txn_id:bank})}><ShieldCheck size={16}/>Approve selected match</button></div>}</>}</div><div className="panel-footer"><ShieldCheck size={15}/>Audit history available in Activity</div></>}</section>
 }
 
 function Guide(){

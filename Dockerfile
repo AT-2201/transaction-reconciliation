@@ -1,8 +1,9 @@
 FROM node:24-alpine AS frontend
-WORKDIR /build
+WORKDIR /build/frontend
 COPY frontend/package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
+COPY datasets/demo_context.json /build/datasets/demo_context.json
 RUN npm run build
 
 FROM python:3.12-slim
@@ -12,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt && useradd -m reconcile
 COPY app/ app/
 COPY datasets/ datasets/
 COPY scripts/container-start.sh scripts/container-start.sh
-COPY --from=frontend /build/dist frontend/dist/
+COPY --from=frontend /build/frontend/dist frontend/dist/
 RUN mkdir -p data && chown -R reconcile:reconcile /project && chmod +x scripts/container-start.sh
 USER reconcile
 ENV RECON_DB=/project/data/reconciliation.sqlite3

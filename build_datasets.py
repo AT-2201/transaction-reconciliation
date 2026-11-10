@@ -452,7 +452,7 @@ report=dict(seed=SEED,as_of_date=str(ASOF),validation_engine='SQLite load of sup
 
 readme=f'''# Synthetic transaction reconciliation datasets
 
-Start with `source/`. These are fictional, standardized source exports for NovaCommerce, not real provider exports or customer records.
+Start with `source/`. These are fictional, standardized source exports for NovaCommerce. The separate `demo_context.json` adds fictional customer names, markets, sales channels, and bank and processor labels for the interface. The matching engine uses the source exports.
 
 ## Scope
 
@@ -547,6 +547,40 @@ Payout-to-bank is inferred by the engine, not stored as a source foreign key. Jo
 Match member role distinguishes expected and actual sides. Stage lives on the group. A source amount may participate across stages but must not be overallocated within the same stage and side. Polymorphic source links need explicit validation in your engine. The supplied SQL is a starting schema, not a complete production control implementation.
 ''',encoding='utf-8')
 
+# Presentation context uses its own random stream. Accounting values and IDs
+# remain reproducible and existing local imports remain compatible.
+context_rng = random.Random(SEED + 1)
+given_names = ['Maya', 'Ethan', 'Priya', 'Elena', 'Jordan', 'Sofia', 'Amir', 'Nina',
+               'Lucas', 'Isabel', 'Miles', 'Leah', 'Noah', 'Samira', 'Zoe', 'Ravi',
+               'Mateo', 'Avery', 'Lena', 'Omar', 'Tessa', 'Amina', 'Nico', 'Hana']
+surnames = ['Patel', 'Rivera', 'Kim', 'Brooks', 'Shah', 'Garcia', 'Chen', 'Bennett',
+            'Reed', 'Nguyen', 'Morales', 'Park', 'Foster', 'Hayes', 'Singh', 'Wright']
+markets = ['Phoenix, AZ', 'Austin, TX', 'Denver, CO', 'Seattle, WA', 'Portland, OR',
+           'Atlanta, GA', 'Chicago, IL', 'San Diego, CA', 'Minneapolis, MN']
+profiles = {
+    row['customer_id']: {
+        'name': f'{context_rng.choice(given_names)} {context_rng.choice(surnames)}',
+        'market': context_rng.choice(markets),
+    }
+    for row in tables['customers']
+}
+channels = ['Online store', 'Mobile app', 'Retail checkout']
+orders = []
+for index, row in enumerate(tables['orders'], 1):
+    assert row['order_id'] == f'ORD-{index:06}'
+    customer_number = int(row['customer_id'].split('-')[1])
+    channel_index = context_rng.choices(range(len(channels)), weights=[62, 29, 9])[0]
+    orders.append([customer_number, channel_index])
+context = {
+    'merchant': 'NovaCommerce',
+    'bank_account': {'id': 'BANK-ACCT-01', 'name': 'Operating account', 'institution': 'Juniper Commercial Bank'},
+    'processor': 'CedarPay',
+    'customers': profiles,
+    'channels': channels,
+    'orders': orders,
+}
+(OUT / 'demo_context.json').write_text(json.dumps(context, separators=(',', ':')) + '\n', encoding='utf-8')
+
 manifest=[]
 for p in sorted(OUT.rglob('*')):
     if p.is_file() and p.name!='manifest.json':
@@ -554,7 +588,7 @@ for p in sorted(OUT.rglob('*')):
         if p.suffix=='.csv':
             with p.open(newline='') as f: entry['rows']=sum(1 for _ in csv.reader(f))-1
         manifest.append(entry)
-(OUT/'manifest.json').write_text(json.dumps(dict(dataset_version='1.0.0',seed=SEED,files=manifest),indent=2)+'\n')
+(OUT/'manifest.json').write_text(json.dumps(dict(dataset_version='1.1.0',seed=SEED,files=manifest),indent=2)+'\n')
 archive=ROOT/'transaction_reconciliation_datasets.zip'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
     for p in sorted(OUT.rglob('*')):

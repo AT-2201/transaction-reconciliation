@@ -8,7 +8,7 @@ Reconcile checks orders, payments, processor payouts, bank deposits, and ledger 
 | --- | --- |
 | Browse a completed reconciliation run, filter match results, search exception cases, inspect source evidence, and export cases to CSV. | Import CSVs, run reconciliation, assign cases, add notes and evidence, and approve or close cases as the appropriate role. |
 
-The hosted demo shows saved results from the bundled NovaCommerce dataset. Use the local app to try the reviewer and approver workflow.
+The hosted demo shows saved results from the bundled NovaCommerce dataset. Customer names, markets, and payment institution names are fictional. A separate context file adds those labels and sales channels to the interface. Use the local app to try the reviewer and approver workflow.
 
 ## Run the full app locally
 

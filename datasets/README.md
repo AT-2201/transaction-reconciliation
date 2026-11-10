@@ -1,6 +1,6 @@
 # Synthetic transaction reconciliation datasets
 
-Start with `source/`. These are fictional, standardized source exports for NovaCommerce, not real provider exports or customer records.
+Start with `source/`. These are fictional, standardized source exports for NovaCommerce. The separate `demo_context.json` adds fictional customer names, markets, sales channels, and bank and processor labels for the interface. The matching engine uses the source exports.
 
 ## Scope
 
