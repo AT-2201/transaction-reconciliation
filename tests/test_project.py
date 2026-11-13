@@ -246,3 +246,41 @@ def test_changed_approved_match_requires_new_decision(client):
     assert result['decision'][0]['active']==0
     assert approve().status_code==200
     assert len([x for x in detail(client,key)['history'] if x['action']=='match_approved'])==2
+
+
+def test_grouped_credit_allocation_and_ambiguity(client):
+    from scripts.demo_scenarios import add_grouped_credit, add_grouped_payouts
+
+    add_grouped_payouts()
+    add_grouped_credit('BTX-DEMO-GROUP')
+    run_id = engine.run()['id']
+    with db.connect() as connection:
+        allocations = db.rows(connection, """SELECT a.amount_cents FROM allocations a
+            JOIN checks ch ON ch.id=a.check_id WHERE ch.run_id=?
+            AND ch.status='reconciled' AND ch.stage='payout_to_bank'
+            AND a.source_id='BTX-DEMO-GROUP' AND a.side='actual'""", (run_id,))
+    assert sorted(row['amount_cents'] for row in allocations) == [40000, 60000]
+    trace = client.get('/api/traces/PO-DEMO-A').json()
+    assert trace['settlement']['actual_cents'] == 60000
+    assert trace['credits'][0]['record']['amount_cents'] == 100000
+
+    add_grouped_credit('BTX-DEMO-DUPLICATE')
+    engine.run()
+    for payout in ('PO-DEMO-A', 'PO-DEMO-B'):
+        trace = client.get(f'/api/traces/{payout}').json()
+        assert trace['settlement']['status'] == 'review'
+        assert trace['settlement']['actual_cents'] is None
+
+
+def test_late_credit_clears_finding_and_preserves_case(client):
+    from scripts.demo_scenarios import add_late_deposit
+
+    case = next(row for row in client.get('/api/exceptions', params={'search': 'PO-0011'}).json()['items']
+                if row['stage'] == 'payout_to_bank')
+    assert case['finding_active']
+    add_late_deposit()
+    engine.run()
+    updated = detail(client, case['id'])
+    assert not updated['case']['finding_active']
+    assert updated['case']['status'] == 'open'
+    assert any(event['action'] == 'finding_changed' for event in updated['history'])

@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 from datetime import date, timedelta
 from .db import connect, now, uid, rows, audit
 
-RULE_VERSION='1.0.0'
+RULE_VERSION='1.1.0'
 STAGES=['order_to_payment','payment_to_payout','payout_to_bank','bank_to_ledger']
 
 
@@ -15,6 +15,39 @@ def weekday_add(day,n):
         day+=timedelta(days=direction)
         while day.weekday()>4: day+=timedelta(days=direction)
     return day
+
+
+def grouped_credits(payouts, banks, manual_owners):
+    """Allocate a combined credit only when its explicit batch reference is unique."""
+    groups = defaultdict(list)
+    for payout in payouts:
+        if payout['bank_reference']:
+            key = (payout['bank_account_id'], payout['currency'], payout['bank_reference'])
+            groups[key].append(payout)
+    matches = {}
+    for key, members in groups.items():
+        if len(members) < 2:
+            continue
+        arrivals = [date.fromisoformat(p['expected_arrival']) for p in members]
+        lower = str(weekday_add(max(arrivals), -2))
+        upper = str(weekday_add(min(arrivals), 2))
+        candidate_lower = str(weekday_add(min(arrivals), -2))
+        candidate_upper = str(weekday_add(max(arrivals), 2))
+        candidates = [
+            b for b in banks
+            if (b['account_id'], b['currency'], b['reference']) == key
+            and candidate_lower <= b['value_date'] <= candidate_upper
+        ]
+        if not candidates:
+            continue
+        total = sum(p['net_amount_cents'] for p in members)
+        safe = (all(p['status'] == 'paid' and p['net_amount_cents'] > 0 for p in members)
+                and len(candidates) == 1 and lower <= candidates[0]['value_date'] <= upper
+                and candidates[0]['amount_cents'] == total
+                and candidates[0]['bank_txn_id'] not in manual_owners)
+        for payout in members:
+            matches[payout['payout_id']] = (safe, candidates)
+    return matches
 
 
 def run(as_of='2026-11-05'):
@@ -67,7 +100,9 @@ def run(as_of='2026-11-05'):
                      [t['txn_id'] for t in captures],
                      [('orders',o['order_id'],'expected',o['order_amount_cents'])]+[('processor_transactions',t['txn_id'],'actual',t['amount_cents']) for t in captures])
 
-            for p in rows(c,'SELECT * FROM processor_payouts WHERE settlement_date<=? ORDER BY payout_id',(as_of,)):
+            payouts = rows(c, 'SELECT * FROM processor_payouts WHERE settlement_date<=? ORDER BY payout_id', (as_of,))
+            grouped = grouped_credits(payouts, banks, manual_bank_owners)
+            for p in payouts:
                 pi=items[p['payout_id']]
                 total=sum(x['signed_contribution_cents'] for x in pi)
                 valid=all(x['signed_contribution_cents']==tx_index[x['txn_id']]['amount_cents'] and tx_index[x['txn_id']]['currency']==p['currency'] for x in pi)
@@ -75,6 +110,16 @@ def run(as_of='2026-11-05'):
                 emit('payment_to_payout',p['payout_id'],status,'signed_items_equal_header' if status=='reconciled' else 'payout_composition_mismatch',
                     p['net_amount_cents'],total,[x['txn_id'] for x in pi],
                     [('processor_payouts',p['payout_id'],'expected',p['net_amount_cents'])]+[('processor_transactions',x['txn_id'],'actual',x['signed_contribution_cents']) for x in pi])
+                if p['payout_id'] in grouped:
+                    safe, credits = grouped[p['payout_id']]
+                    amount = p['net_amount_cents']
+                    members = [('processor_payouts', p['payout_id'], 'expected', amount)]
+                    if safe:
+                        members.append(('bank_transactions', credits[0]['bank_txn_id'], 'actual', amount))
+                    emit('payout_to_bank', p['payout_id'], 'reconciled' if safe else 'review',
+                         'grouped_bank_credit' if safe else 'ambiguous_grouped_bank_credit',
+                         amount, amount if safe else None, [b['bank_txn_id'] for b in credits], members)
+                    continue
                 arrival=date.fromisoformat(p['expected_arrival'])
                 lower,upper=str(weekday_add(arrival,-2)),str(weekday_add(arrival,2))
                 eligible=[b for b in banks if b['account_id']==p['bank_account_id'] and b['currency']==p['currency'] and lower<=b['value_date']<=upper]

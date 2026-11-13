@@ -283,6 +283,8 @@ def approve(case_id: str,body: Action,user=Depends(approver)):
         check=c.execute('SELECT * FROM checks WHERE id=?',(case['last_check_id'],)).fetchone()
         if case['stage']!='payout_to_bank' or check['status']!='review':
             raise HTTPException(422,'Only a proposed payout-to-bank match can be approved')
+        if check['reason']=='ambiguous_grouped_bank_credit':
+            raise HTTPException(422,'Correct the shared reference or deposit in the source records and rerun reconciliation')
         if body.bank_txn_id not in json.loads(check['candidates']): raise HTTPException(422,'Choose a proposed bank candidate')
         if case['assigned_to']==user['user_id']: raise HTTPException(403,'The case owner cannot approve their own match')
         if not c.execute('SELECT 1 FROM evidence WHERE case_id=?',(case_id,)).fetchone():
@@ -336,6 +338,33 @@ def checks(stage: str='',status: str='',search: str='',offset: int=Query(0,ge=0)
         if search: where+=' AND entity_id LIKE ?'; args.append(f'%{search}%')
         total=c.execute('SELECT COUNT(*) FROM checks WHERE '+where,args).fetchone()[0]
         return dict(items=db.rows(c,'SELECT * FROM checks WHERE '+where+' ORDER BY entity_id LIMIT ? OFFSET ?',args+[limit,offset]),total=total)
+
+
+@app.get('/api/traces/{payout_id}')
+def payout_trace(payout_id: str, user=Depends(actor)):
+    with db.connect() as c:
+        run = latest(c)
+        if not run:
+            raise HTTPException(404, 'Run reconciliation first')
+        checks = db.rows(c, """SELECT * FROM checks WHERE run_id=? AND entity_id=?
+            AND stage IN ('payment_to_payout','payout_to_bank')""", (run['id'], payout_id))
+        if not checks:
+            raise HTTPException(404, 'Payout absent from the latest run')
+        composition = next(check for check in checks if check['stage']=='payment_to_payout')
+        settlement = next(check for check in checks if check['stage']=='payout_to_bank')
+        components = db.rows(c, """SELECT t.type, COUNT(*) count, SUM(a.amount_cents) amount
+            FROM allocations a JOIN processor_transactions t ON t.txn_id=a.source_id
+            WHERE a.check_id=? AND a.side='actual' GROUP BY t.type ORDER BY t.type""", (composition['id'],))
+        credits = []
+        for credit_id in json.loads(settlement['candidates']):
+            credit = c.execute('SELECT * FROM bank_transactions WHERE bank_txn_id=?', (credit_id,)).fetchone()
+            if credit is None:
+                continue
+            ledger = c.execute("SELECT * FROM checks WHERE run_id=? AND stage='bank_to_ledger' AND entity_id=?",
+                               (run['id'], credit_id)).fetchone()
+            credits.append(dict(record=dict(credit), ledger=dict(ledger) if ledger else None))
+        return dict(payout_id=payout_id, composition=composition, components=components,
+                    settlement=settlement, credits=credits)
 
 
 @app.get('/api/imports')

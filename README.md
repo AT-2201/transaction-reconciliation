@@ -10,6 +10,19 @@ Reconcile checks orders, payments, processor payouts, bank deposits, and ledger 
 
 The hosted demo shows saved results from the bundled NovaCommerce dataset. Customer names, markets, and payment institution names are fictional. A separate context file adds those labels and sales channels to the interface. Use the local app to try the reviewer and approver workflow.
 
+## Try a reconciliation scenario
+
+Open **Scenarios** in the public demo to add a sample late deposit and reveal the engine's next result, or compare a combined deposit with an ambiguous duplicate. The public walkthrough replays results generated from synthetic imports during the build. The case history shows when the finding cleared.
+
+In **Matches**, open a payout trace to follow payment components, the processor payout, bank credits, and ledger results. Shared-reference settlements match automatically when a single credit equals the sum of the paid payouts and falls within their common arrival window. Multiple candidate credits or an inconsistent total go to review.
+
+The baseline evaluator reports the following results. Coverage uses all labeled checks as its denominator. Allocation checks compare record IDs and amounts against the available ground truth.
+
+| Split | Checks | Automatic coverage | False matches observed | Allocations checked | Review findings |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Development | 8,298 | 97.0% | 0 | 8,046 | 47 |
+| Holdout | 2,062 | 96.6% | 0 | 1,990 | 21 |
+
 ## Run the full app locally
 
 Requires Python 3.12+ and Node.js 20.19+ or 22.12+.
