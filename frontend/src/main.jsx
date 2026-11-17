@@ -110,7 +110,7 @@ function App(){
     <div className="page-actions">
      {isDesk&&publicDemo&&<button className="primary" onClick={()=>navigate('scenarios')}><Play size={15}/> Try a scenario</button>}
      {summary?.run?.as_of_date&&<span className="date-pill"><Clock3 size={14}/> As of {shortDate(summary.run.as_of_date)}</span>}
-     {isDesk&&<button className="secondary" onClick={()=>navigate('overview?panel=imports')}><Upload size={15}/> Imports</button>}
+     {isDesk&&<button className="secondary" onClick={()=>navigate(showAnalysis?'overview?view=analysis&panel=imports':'overview?panel=imports')}><Upload size={15}/> Imports</button>}
      {isDesk&&user.role==='approver'&&<button className="primary" disabled={running} onClick={run}>
       {running?<LoaderCircle size={16} className="spin"/>:<Play size={14}/>} {running?'Reconciling…':'Run reconciliation'}
      </button>}
@@ -126,7 +126,7 @@ function App(){
    <footer><span>NOVACOMMERCE / SAMPLE DATA</span><span>USD</span></footer>
   </main>
   </div>
-  {showImports&&<ImportsDialog user={user} refresh={refresh} revision={revision} close={()=>navigate('overview')}/>}
+  {showImports&&<ImportsDialog user={user} refresh={refresh} revision={revision} close={()=>navigate(showAnalysis?'overview?view=analysis':'overview')}/>}
   {toast&&<div className="toast" role="status"><CheckCircle2 size={18}/>{toast}</div>}
  </div>
 }
@@ -169,36 +169,44 @@ function DeskStatus({data,navigate,showAnalysis}){
  const matched=data.counts.reconciled||0;
  const rate=total?matched/total*100:0;
  return <>
-  <dl className="balance-strip" aria-label="Latest reconciliation">
-   <div className="balance-match">
-    <dt>Reconciled</dt>
-    <dd>{total?rate.toFixed(1)+'%':'—'} <small>{number(matched)} of {number(total)} checks</small></dd>
-    <div className="balance-meter" aria-hidden="true"><i style={{width:rate+'%'}}/></div>
+  <section className="close-brief" aria-label="Latest reconciliation">
+   <div className="close-scoreboard">
+    <div className="close-score">
+     <div>
+      <h2>Match rate</h2>
+      <strong>{total?rate.toFixed(1)+'%':'—'}</strong>
+      <p>{number(matched)} of {number(total)} checks reconciled</p>
+     </div>
+     <div className="close-ring" style={{'--reconciled':rate+'%'}} aria-hidden="true"><Check size={25}/></div>
+    </div>
+    <div className="close-stages" aria-label="Match rates by stage">
+     {Object.entries(STAGES).map(([key,label])=>{
+      const results=data.stages.filter(row=>row.stage===key);
+      const reconciled=results.find(row=>row.status==='reconciled')?.count||0;
+      const checks=results.reduce((sum,row)=>sum+row.count,0);
+      const stageRate=checks?reconciled/checks*100:0;
+      return <button key={key} onClick={()=>navigate('checks?stage='+key)}>
+       <span>{label}<ArrowUpRight size={13}/></span>
+       <strong>{checks?stageRate.toFixed(1)+'%':'—'}</strong>
+       <span className="balance-meter" aria-hidden="true"><i style={{width:stageRate+'%'}}/></span>
+      </button>
+     })}
+    </div>
    </div>
-   <div><dt>Open cases</dt><dd>{number(data.open_cases)}</dd></div>
-   <div><dt>Flagged variance</dt><dd>{money(data.flagged_variance_cents)}</dd></div>
-   <div><dt>Pending settlements</dt><dd>{number(data.counts.pending)}</dd></div>
-  </dl>
+   <div className="close-exposure">
+    <h2>Outstanding items</h2>
+    <dl>
+     <div><dt>Flagged variance</dt><dd>{money(data.flagged_variance_cents)}</dd></div>
+     <div><dt>Open cases</dt><dd>{number(data.open_cases)}</dd></div>
+     <div><dt>Pending settlements</dt><dd>{number(data.counts.pending)}</dd></div>
+    </dl>
+   </div>
+  </section>
   <nav className="desk-tabs" aria-label="Overview">
    <a href="#overview" aria-current={!showAnalysis?'page':undefined}>Case queue</a>
-   <a href="#overview?view=analysis" aria-current={showAnalysis?'page':undefined}>Match analysis</a>
+   <a href="#overview?view=analysis" aria-current={showAnalysis?'page':undefined}>Payout trends</a>
   </nav>
-  {showAnalysis&&<div className="analysis-sheet">
-   <div className="stage-results">
-    <h2>Matches by stage</h2>
-    {Object.entries(STAGES).map(([key,label])=>{
-     const results=data.stages.filter(row=>row.stage===key);
-     const matched=results.find(row=>row.status==='reconciled')?.count||0;
-     const total=results.reduce((sum,row)=>sum+row.count,0);
-     return <button key={key} onClick={()=>navigate('checks?stage='+key)}>
-      <span>{label}<ArrowUpRight size={14}/></span>
-      <strong>{number(matched)} <small>of {number(total)} reconciled</small></strong>
-      <span className="balance-meter" aria-hidden="true"><i style={{width:(total?matched/total*100:0)+'%'}}/></span>
-     </button>
-    })}
-   </div>
-   <SettlementChart trend={data.trend}/>
-  </div>}
+  {showAnalysis&&<div className="analysis-sheet"><SettlementChart trend={data.trend}/></div>}
  </>
 }
 
@@ -287,7 +295,7 @@ function CaseWorkspace({user,users,revision,refresh}){
    {error?<div className="error" role="alert">{error}</div>:!result?<Loading/>:result.items.length?<div className="index-entries">
     {result.items.map(item=><button key={item.id} className="index-entry" aria-pressed={item.id===active?.id} onClick={()=>openCase(item.id)}>
      <span className="index-entry-top"><strong>{item.entity_id}</strong><span>{money(item.variance_cents)}</span></span>
-     <span className="index-finding">{orderProfile(item.entity_id)?.customer?.name||human(item.type)}</span>
+     <span className="index-finding">{human(item.type)}{orderProfile(item.entity_id)?.customer?.name&&<small>{orderProfile(item.entity_id).customer.name}</small>}</span>
      <span className="index-entry-meta"><Badge status={item.status}/><span>{STAGES[item.stage]}</span></span>
     </button>)}
    </div>:<Empty title="No cases found" text=""/>}
