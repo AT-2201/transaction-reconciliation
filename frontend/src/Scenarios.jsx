@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {TransactionTrail, RecordList, amount, readable} from './TransactionTrail';
 
 const usd = cents => cents == null ? 'Missing' : new Intl.NumberFormat('en-US', {
   style: 'currency', currency: 'USD'
@@ -8,23 +9,45 @@ const label = value => value.replaceAll('_', ' ');
 
 export function Trace({trace}) {
   const {composition, settlement, components, credits} = trace;
-  return <div className="trace-grid">
-    <section><h3>Payment activity</h3>
-      {components.length ? components.map(row => <div className="trace-line" key={row.type}>
-        <span>{label(row.type)} ({row.count})</span><strong>{usd(row.amount)}</strong>
-      </div>) : <p>No linked payment activity.</p>}
-      <div className="trace-line"><span>Net of items</span><strong>{usd(composition.actual_cents)}</strong></div>
-    </section>
-    <section><h3>Processor payout</h3><strong>{usd(composition.expected_cents)}</strong>
-      <p>{trace.payout_id} · {label(composition.status)}</p></section>
-    <section><h3>Bank deposit</h3><strong>{usd(settlement.actual_cents)}</strong>
-      <p>{label(settlement.status)} · {label(settlement.reason)}</p>
-      {credits.map(({record}) => <p key={record.bank_txn_id}>{record.bank_txn_id} · {usd(record.amount_cents)} total credit</p>)}
-    </section>
-    <section><h3>Ledger</h3>{credits.length ? credits.map(({record, ledger}) => <p key={record.bank_txn_id}>
-      {ledger ? `${usd(ledger.actual_cents)} posted · ${label(ledger.status)}` : 'No ledger check for this credit'}
-    </p>) : <p>Waiting for a bank record.</p>}</section>
-  </div>;
+  const uncertain = settlement.status === 'review';
+  const ledgerChecks = credits.filter(credit => credit.ledger);
+  const ledgerStatus = !credits.length || !ledgerChecks.length ? 'unavailable'
+    : ledgerChecks.length !== credits.length ? 'unavailable'
+    : ledgerChecks.some(credit => credit.ledger.status !== 'reconciled') ? 'exception' : 'reconciled';
+  const ledgerTotal = ledgerChecks.length === credits.length && credits.length
+    ? ledgerChecks.reduce((sum, credit) => sum + credit.ledger.actual_cents, 0) : null;
+  const nodes = [
+    {id:'payments', title:'Payment activity', value:amount(composition.actual_cents), status:'source',
+      caption:'Signed payout items',
+      content:<RecordList rows={components.map(row => [readable(row.type) + ' (' + row.count + ')', amount(row.amount)])}/>},
+    {id:'payout', title:'Processor payout', value:amount(composition.expected_cents), status:composition.status,
+      caption:trace.payout_id,
+      content:<RecordList rows={[
+        ['Payout', trace.payout_id], ['Reported net', amount(composition.expected_cents)],
+        ['Signed item total', amount(composition.actual_cents)], ['Difference', amount(composition.variance_cents)],
+        ['Matching rule', readable(composition.reason)]
+      ]}/>},
+    {id:'bank', title:'Bank deposit',
+      value:uncertain ? credits.length + ' candidate' + (credits.length === 1 ? '' : 's') : amount(settlement.actual_cents),
+      status:settlement.status, caption:readable(settlement.reason),
+      content:<><RecordList rows={credits.flatMap(({record}) => [
+        ['Bank record', record.bank_txn_id], ['Full credit', amount(record.amount_cents)],
+        ['Account', record.account_id], ['Currency', record.currency], ['Value date', record.value_date],
+        ['Reference', record.reference || 'Missing reference']
+      ])}/>{!uncertain && credits.length > 0 && <p className="trail-note">
+        Amount allocated to this payout {amount(settlement.actual_cents)}.
+        {settlement.reason === 'grouped_bank_credit' && ' The full bank credit also covers other payouts.'}
+      </p>}</>},
+    {id:'ledger', title:'Ledger', value:uncertain ? 'Candidate records' : amount(ledgerTotal),
+      status:uncertain ? 'review' : ledgerStatus,
+      caption:credits.length > 1 ? 'Cash postings for all candidate credits' : 'Cash postings for full bank credit',
+      content:<><RecordList rows={credits.flatMap(({record, ledger}) => [
+        ['Bank record', record.bank_txn_id], ['Checked cash postings', ledger ? amount(ledger.actual_cents) : 'No ledger check'],
+        ['Result', ledger ? readable(ledger.reason) : 'Unavailable']
+      ])}/>{uncertain && <p className="trail-note">These postings belong to candidate deposits. The bank match still requires review.</p>}</>}
+  ];
+  return <TransactionTrail nodes={nodes}/>;
+
 }
 
 export function PayoutTrace({payoutId, api, revision}) {
@@ -32,6 +55,8 @@ export function PayoutTrace({payoutId, api, revision}) {
   const [error, setError] = useState('');
   useEffect(() => {
     let current = true;
+    setTrace(null);
+    setError('');
     api('/traces/' + encodeURIComponent(payoutId)).then(data => {
       if (current) setTrace(data);
     }).catch(err => { if (current) setError(err.message); });

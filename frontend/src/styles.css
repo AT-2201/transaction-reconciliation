@@ -460,3 +460,56 @@ h1, h2, .brand { font-family: inherit; font-weight: 650; letter-spacing: -.035em
  .case-index { border-right: 0; border-bottom: 1px solid var(--line); }
  .close-exposure { border-left: 0; border-top: 1px solid #42615a; }
 }
+
+.case-explanation {
+ margin: 16px 19px 4px;
+ padding: 14px 16px;
+ border-left: 3px solid #ba743e;
+ background: #fcf7ef;
+ color: #3c382f;
+ border-radius: 0 6px 6px 0;
+}
+.case-explanation h3 { font-size: 14px; margin: 0 0 6px; color: #4f381f; }
+.case-explanation p { font-size: 13px; line-height: 1.6; }
+.explanation-next { margin-top: 8px; }
+.explanation-next strong { display: block; font-size: 11px; margin-bottom: 2px; }
+.transaction-trail { margin: 0 0 20px; min-width: 0; }
+.trail-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 12px; margin: 0 0 12px; }
+.trail-heading h3 { margin: 0; font-size: 14px; }
+.trail-heading > span { color: var(--muted); font-size: 11px; }
+.trail-nodes { display: flex; list-style: none; padding: 0; margin: 0; gap: 22px; }
+.trail-node { flex: 1; position: relative; min-width: 0; }
+.trail-node > button {
+ display: flex; flex-direction: column; align-items: start; gap: 6px;
+ width: 100%; height: 100%; padding: 12px 10px;
+ border: 1px solid var(--line); border-top: 3px solid #81938c;
+ border-radius: 6px; text-align: left; background: #fafcf9;
+}
+.trail-node.reconciled > button { border-top-color: #39835f; }
+.trail-node.exception > button { border-top-color: #ae5b35; background: #fff8f3; }
+.trail-node.review > button { border-top-color: #b1842f; background: #fffbef; }
+.trail-node.pending > button { border-top-color: #567b8f; }
+.trail-node > button:hover { box-shadow: inset 0 0 0 1px #6b9280; }
+.trail-node > button[aria-expanded=true] { outline: 2px solid var(--green); outline-offset: 1px; }
+.trail-node-title { display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%; font-size: 11px; font-weight: 600; }
+.trail-node-title svg { flex: none; }
+.trail-node strong { font-size: clamp(12px, 1.4vw, 18px); letter-spacing: -.03em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.trail-node small { color: var(--muted); font-size: 10px; overflow-wrap: anywhere; line-height: 1.45; }
+.trail-state { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.trail-node.reconciled .trail-state { color: #216143; }
+.trail-node.exception .trail-state { color: #8c4325; }
+.trail-node.review .trail-state { color: #755519; }
+.trail-connector { position: absolute; top: 35px; right: -20px; color: #70877a; }
+.trail-node:last-child .trail-connector { display: none; }
+.trail-records { border: 1px solid var(--line); border-radius: 6px; margin-top: 12px; padding: 12px; background: #fff; max-height: 320px; overflow: auto; }
+.trail-records h4 { margin: 0 0 8px; font-size: 13px; }
+.trail-facts > div { display: grid; grid-template-columns: minmax(100px, .7fr) minmax(0, 1fr); gap: 10px; border-bottom: 1px solid var(--line); padding: 6px 0; font-size: 12px; }
+.trail-facts dt { color: var(--muted); }
+.trail-facts dd { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.trail-note { margin-top: 10px; color: var(--muted); font-size: 12px; }
+@media (max-width: 1000px) and (min-width: 681px), (max-width: 460px) {
+ .trail-nodes { flex-direction: column; gap: 20px; }
+ .trail-node > button { display: grid; grid-template-columns: 1fr 1fr; }
+ .trail-node-title, .trail-node small { grid-column: 1 / -1; }
+ .trail-connector { top: auto; right: auto; left: 18px; bottom: -19px; transform: rotate(90deg); }
+}

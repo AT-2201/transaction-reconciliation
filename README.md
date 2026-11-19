@@ -43,6 +43,8 @@ Alternative: `docker compose up --build` starts the same application with a pers
 - Four independent checks: orders to captures, processor activity to payouts, payouts to bank, and bank cash movements to accounting.
 - Signed integer-cent arithmetic, exact references, compatible statuses, currency and account checks, weekday date windows, and conservative review candidates.
 - Filterable/searchable exception queue, CSV export, source evidence, assignments, notes, supporting attachments, and case statuses.
+- Case explanations derived from matching rules and checked amounts, with suggested evidence to verify.
+- Clickable transaction trails for linked order captures, payout settlement, and bank-to-ledger checks, including competing deposits and grouped credit allocations.
 - Session cookies, server-enforced reviewer/approver permissions, evidence requirements, and a case-owner approval restriction.
 - CSV source import with exact headers, validated fields, stable-identity deduplication, immutable conflicting records, retained raw files and checksums, and row-level quarantine.
 - Versioned run snapshots and allocations; reruns preserve decisions and review history. Concurrent stale case edits return a conflict.
